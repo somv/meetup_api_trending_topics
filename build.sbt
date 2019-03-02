@@ -17,7 +17,10 @@ libraryDependencies ++= {
     "org.apache.spark" %% "spark-sql" % sparkVer,
     "org.apache.spark" %% "spark-streaming" % sparkVer,
     "com.ning" % "async-http-client" % "1.9.10",
-    "com.typesafe.play" %% "play-json" % "2.7.1"
+    "com.typesafe.play" %% "play-json" % "2.7.1",
+    "com.typesafe" % "config" % "1.3.2",
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "com.holdenkarau" %% "spark-testing-base" % "2.3.1_0.10.0" % "test"
   )
 }
 
