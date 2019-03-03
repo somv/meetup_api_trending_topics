@@ -171,24 +171,11 @@ object RealTimeProcessing extends Commons {
 
   /**
     * A utility function to write rdd data to disk,
-    * RDDs will be stored in directories of their time.
+    * RDDs will be stored in directories of their respective times.
     *
     * @param rdd
     * @param time
     */
   def writeData(rdd: RDD[String], time: Time): Unit = rdd.saveAsTextFile(writeDataDirectory+s"/${time.milliseconds}")
-
-  def makeFilterVariable(filterMap: Map[String, Option[Any]], args: Array[String]): Map[String, Option[Any]] = {
-    var map: Map[String, Option[Any]] = Map()
-    println("function called")
-    val properties: Set[String] = Set("topN", "country", "state", "city")
-    for (data <- args) {
-      val splitArgData = data.split("=")
-      val property = splitArgData(0)
-      val value = splitArgData(1)
-      if(properties.contains(property))  map += (property -> Some(value))
-    }
-    map
-  }
 
 }
