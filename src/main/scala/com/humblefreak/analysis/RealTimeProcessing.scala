@@ -1,11 +1,28 @@
 package com.humblefreak.analysis
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.{Seconds, Time}
 import play.api.libs.json.{JsArray, Json}
 
 object RealTimeProcessing extends Commons {
+
+  val conf: Config = ConfigFactory.load
+
+  val blockInterval: Int = conf.getInt("sparkStreaming.realTimeProcessing.blockInterval")
+  val batchInterval: Int = conf.getInt("sparkStreaming.realTimeProcessing.batchInterval")
+  val checkpointDirectory: String = conf.getString("sparkStreaming.realTimeProcessing.checkpointDirectory")
+  val writeDataDirectory: String = conf.getString("sparkStreaming.realTimeProcessing.writeDataDirectory")
+  val numberOfReceivers: Int = conf.getInt("sparkStreaming.realTimeProcessing.numberOfReceivers")
+  val apiURL: String = conf.getString("sparkStreaming.realTimeProcessing.apiURL")
+  val appName: String = conf.getString("sparkStreaming.realTimeProcessing.appName")
+  val master: String = conf.getString("sparkStreaming.realTimeProcessing.master")
+  val logLevel: String = conf.getString("sparkStreaming.realTimeProcessing.logLevel")
+  val windowDurationInSeconds: Int = conf.getInt("sparkStreaming.realTimeProcessing.windowDurationInSeconds")
+  val slideIntervalInSeconds: Int = conf.getInt("sparkStreaming.realTimeProcessing.slideIntervalInSeconds")
+
+  val ssc = getSparkStreamingContext(appName, master, blockInterval, batchInterval, checkpointDirectory, logLevel)
 
   def main(args: Array[String]): Unit = {
 

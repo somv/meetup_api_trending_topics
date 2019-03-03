@@ -1,9 +1,10 @@
-import com.humblefreak.analysis.{GroupData, RealTimeProcessing}
-import org.scalatest.FunSuite
+import com.humblefreak.analysis.{GroupData, RealTimeProcessing, Commons}
+
+import org.scalatest.{BeforeAndAfter, FunSuite}
 
 import scala.collection.mutable.ArrayBuffer
 
-class RealTimeProcessingSuite extends FunSuite {
+class RealTimeProcessingSuite extends FunSuite with Commons {
 
   test("makeGroupDataFromResString should run okay in case of valid response string") {
 
