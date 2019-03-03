@@ -1,12 +1,14 @@
 package com.humblefreak.analysis
 
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.dstream.DStream
-import org.apache.spark.streaming.{Seconds, Time}
+import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 import play.api.libs.json.{JsArray, Json}
 
-object RealTimeProcessing extends Commons {
+object RealTimeProcessing {
 
   val conf: Config = ConfigFactory.load
 
@@ -23,8 +25,21 @@ object RealTimeProcessing extends Commons {
   val slideIntervalInSeconds: Int = conf.getInt("sparkStreaming.realTimeProcessing.slideIntervalInSeconds")
   val defaultTopN: Int = conf.getInt("sparkStreaming.realTimeProcessing.defaultTopN")
 
-  // Initialize streaming context with appropriate configuration parameters
-  val ssc = getSparkStreamingContext(appName, master, blockInterval, batchInterval, checkpointDirectory, logLevel)
+  val sparkConf = new SparkConf()
+    .setAppName(appName)
+    .setMaster(master)
+    .set("spark.streaming.blockInterval", blockInterval.toString)
+
+  val spark = SparkSession
+    .builder()
+    .config(sparkConf)
+    .getOrCreate()
+
+  val sc = spark.sparkContext
+  sc.setLogLevel(logLevel)
+
+  val ssc = new StreamingContext(sc, Seconds(batchInterval))
+  ssc.checkpoint(checkpointDirectory)
 
   def main(args: Array[String]): Unit = {
 
@@ -53,6 +68,7 @@ object RealTimeProcessing extends Commons {
     // Code will stop executing in case of invalid arguments, i.e. max arguments can be 4.
     if(args.length > 4) {
       println("Invalid arguments. See usage <topN=10> <country=us> <state=TX> <city=austin>")
+      ssc.stop(true, true)
       return
     }
 
