@@ -4,7 +4,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming._
 
-trait Commons {
+abstract class Commons {
 
     def getSparkStreamingContext(appName: String, master: String, blockInterval: Int, batchInterval: Int, checkpointDirectory: String, logLevel: String): StreamingContext = {
 

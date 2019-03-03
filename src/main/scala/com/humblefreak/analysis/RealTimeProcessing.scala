@@ -158,7 +158,7 @@ object RealTimeProcessing extends Commons {
     val filterState = groupState.getOrElse("").toLowerCase
     val filterCity = groupCity.getOrElse("").toLowerCase
 
-    println(s"Filter parameters country=${filterCountry}, state=${filterState} and city=${filterCity}")
+    println(s"Filter parameters country='${filterCountry}', state='${filterState}' and city='${filterCity}'")
 
     var filtered = windowedDStream
 
