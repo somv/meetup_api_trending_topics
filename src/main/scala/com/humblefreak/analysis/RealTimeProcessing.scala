@@ -21,13 +21,42 @@ object RealTimeProcessing extends Commons {
   val logLevel: String = conf.getString("sparkStreaming.realTimeProcessing.logLevel")
   val windowDurationInSeconds: Int = conf.getInt("sparkStreaming.realTimeProcessing.windowDurationInSeconds")
   val slideIntervalInSeconds: Int = conf.getInt("sparkStreaming.realTimeProcessing.slideIntervalInSeconds")
+  val defaultTopN: Int = conf.getInt("sparkStreaming.realTimeProcessing.defaultTopN")
 
+  // Initialize streaming context with appropriate configuration parameters
   val ssc = getSparkStreamingContext(appName, master, blockInterval, batchInterval, checkpointDirectory, logLevel)
 
   def main(args: Array[String]): Unit = {
 
-    startStreaming(20, Some(""), None, Some(""))
+    var topN: Option[Int] = None
+    var country: Option[String] = None
+    var state: Option[String] = None
+    var city: Option[String] = None
 
+    if(args.length > 0 & args.length<=4) {
+      val properties: Set[String] = Set("topN", "country", "state", "city")
+      for (data <- args) {
+        val splitArgData = data.split("=")
+        val property = splitArgData(0)
+        val value = splitArgData(1)
+        if(properties.contains(property)) {
+          property match {
+            case "topN" => try { topN = Some(value.trim.toInt) } catch { case ex: Exception => Some(defaultTopN)} // when user passes inappropriate argument value to topN, default value will be used.
+            case "country" => country = Some(value.trim)
+            case "state" => state = Some(value.trim)
+            case "city" => city = Some(value.trim)
+          }
+        }
+      }
+    }
+
+    // Code will stop executing in case of invalid arguments, i.e. max arguments can be 4.
+    if(args.length > 4) {
+      println("Invalid arguments. See usage <topN=10> <country=us> <state=TX> <city=austin>")
+      return
+    }
+
+    startStreaming(topN, country, state, city)
   }
 
   /**
@@ -42,15 +71,13 @@ object RealTimeProcessing extends Commons {
     * @param groupState state geographical filter
     * @param groupCity city geographical filter
     */
-  def startStreaming(topN: Int, groupCountry: Option[String], groupState: Option[String], groupCity: Option[String]): Unit = {
+  def startStreaming(topN: Option[Int], groupCountry: Option[String], groupState: Option[String], groupCity: Option[String]): Unit = {
 
     val receiverStreams = (1 to numberOfReceivers).map(x => ssc.receiverStream(new DataReceiver(apiURL)))
 
     val unifiedStream = ssc.union(receiverStreams)
 
-    val groupInfo = makeGroupData(unifiedStream)
-
-    val flattenedGroupInfo = groupInfo.flatMap(list => list)
+    val flattenedGroupInfo = makeGroupData(unifiedStream)
 
     val windowedDStream = flattenedGroupInfo.window(Seconds(windowDurationInSeconds), Seconds(slideIntervalInSeconds))
 
@@ -63,7 +90,7 @@ object RealTimeProcessing extends Commons {
       .transform(rdd => rdd.keys)
 
 
-    resultantDStream.print(topN)
+    resultantDStream.print(topN.getOrElse(defaultTopN).toInt) // Check defaultTopN value from the config file
 
     ssc.start()
     ssc.awaitTermination()
@@ -75,9 +102,9 @@ object RealTimeProcessing extends Commons {
     * Applies 'makeGroupDataFromResString' on each RDD
     *
     * @param inputStream
-    * @return DStream[ Seq[GroupData] ]
+    * @return DStream[GroupData]
     */
-  def makeGroupData(inputStream: DStream[String]): DStream[Seq[GroupData]] = inputStream.transform (rdd => rdd.map(makeGroupDataFromResString))
+  def makeGroupData(inputStream: DStream[String]): DStream[GroupData] = inputStream.transform (rdd => rdd.map(makeGroupDataFromResString).flatMap(list => list))
 
   /**
     * This function takes response string (received from Meetup API) as input,
@@ -131,6 +158,8 @@ object RealTimeProcessing extends Commons {
     val filterState = groupState.getOrElse("").toLowerCase
     val filterCity = groupCity.getOrElse("").toLowerCase
 
+    println(s"Filter parameters country=${filterCountry}, state=${filterState} and city=${filterCity}")
+
     var filtered = windowedDStream
 
     if(filterCountry.nonEmpty) filtered = filtered.filter(groupData => groupData.country.equals(filterCountry))
@@ -148,5 +177,18 @@ object RealTimeProcessing extends Commons {
     * @param time
     */
   def writeData(rdd: RDD[String], time: Time): Unit = rdd.saveAsTextFile(writeDataDirectory+s"/${time.milliseconds}")
+
+  def makeFilterVariable(filterMap: Map[String, Option[Any]], args: Array[String]): Map[String, Option[Any]] = {
+    var map: Map[String, Option[Any]] = Map()
+    println("function called")
+    val properties: Set[String] = Set("topN", "country", "state", "city")
+    for (data <- args) {
+      val splitArgData = data.split("=")
+      val property = splitArgData(0)
+      val value = splitArgData(1)
+      if(properties.contains(property))  map += (property -> Some(value))
+    }
+    map
+  }
 
 }
