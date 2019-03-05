@@ -40,7 +40,6 @@ class NewDataReceiver(url: String) extends Receiver[String](StorageLevel.MEMORY_
       val in: BufferedReader  = new BufferedReader(new InputStreamReader(connection.getInputStream))
       var readLine: String = in.readLine()
       while (readLine != null) {
-        System.out.println(readLine)
         store(readLine)
         readLine = in.readLine()
       }
