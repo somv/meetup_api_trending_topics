@@ -16,7 +16,6 @@ object RealTimeProcessing {
   val batchInterval: Int = conf.getInt("sparkStreaming.realTimeProcessing.batchInterval")
   val checkpointDirectory: String = conf.getString("sparkStreaming.realTimeProcessing.checkpointDirectory")
   val writeDataDirectory: String = conf.getString("sparkStreaming.realTimeProcessing.writeDataDirectory")
-  val numberOfReceivers: Int = conf.getInt("sparkStreaming.realTimeProcessing.numberOfReceivers")
   val apiURL: String = conf.getString("sparkStreaming.realTimeProcessing.apiURL")
   val appName: String = conf.getString("sparkStreaming.realTimeProcessing.appName")
   val master: String = conf.getString("sparkStreaming.realTimeProcessing.master")
@@ -43,11 +42,12 @@ object RealTimeProcessing {
 
   def main(args: Array[String]): Unit = {
 
-    var topN: Option[Int] = None
-    var country: Option[String] = None
-    var state: Option[String] = None
-    var city: Option[String] = None
+    var topN: Option[Int] = None // will be used to fetch print the topN topics at any time.
+    var country: Option[String] = None // country filter on the topics
+    var state: Option[String] = None // state filter
+    var city: Option[String] = None // city filter
 
+    // checking if there are any arguments provided at the time of submitting the job to spark
     if(args.length > 0 & args.length<=4) {
       val properties: Set[String] = Set("topN", "country", "state", "city")
       for (data <- args) {
@@ -78,7 +78,7 @@ object RealTimeProcessing {
   /**
     * Streaming entry point function, takes filters as input.
     *
-    * This function has multiple receivers which can receive data concurrently from the streaming API.
+    * * This function receives real time data from from the streaming API.
     *
     * Function also applies a window on the predefined duration and sliding interval.
     *
@@ -89,11 +89,9 @@ object RealTimeProcessing {
     */
   def startStreaming(topN: Option[Int], groupCountry: Option[String], groupState: Option[String], groupCity: Option[String]): Unit = {
 
-    val receiverStreams = (1 to numberOfReceivers).map(x => ssc.receiverStream(new DataReceiver(apiURL)))
+    val receiverStream = ssc.receiverStream(new NewDataReceiver(apiURL))
 
-    val unifiedStream = ssc.union(receiverStreams)
-
-    val flattenedGroupInfo = makeGroupData(unifiedStream)
+    val flattenedGroupInfo = makeGroupData(receiverStream)
 
     val windowedDStream = flattenedGroupInfo.window(Seconds(windowDurationInSeconds), Seconds(slideIntervalInSeconds))
 
@@ -106,7 +104,7 @@ object RealTimeProcessing {
       .transform(rdd => rdd.keys)
 
 
-    resultantDStream.print(topN.getOrElse(defaultTopN).toInt) // Check defaultTopN value from the config file
+    resultantDStream.print(topN.getOrElse(defaultTopN)) // Check defaultTopN value from the config file
 
     ssc.start()
     ssc.awaitTermination()
@@ -153,7 +151,7 @@ object RealTimeProcessing {
         .map(x => GroupData(((x \ "topic_name").asOpt[String].getOrElse("").toLowerCase), guests, country, state, city))
     } catch {
       case e: Exception =>
-        println(s"Exception occurred while parsing JSON. ${e.getMessage}")
+        // println(s"Exception occurred while parsing JSON. ${e.getMessage}")
         Seq(GroupData("", 0, "", "", ""))
     }
   }

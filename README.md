@@ -1,11 +1,11 @@
 # Top trending topics on Meetup.com
 
-This is a distributable real time spark streaming solution that finds top trending topics for a configured period of time on Meetup's site.
+This is a distributable real time spark streaming application that finds top trending topics for a configured period of time on Meetup's site.
 
 ## Getting Started
 
 Change the configuration parameters on the application.conf file located in `<base_dir>/src/main/resources/application.conf` as per the requirements.
-The current configuration runs perfectly on a single 4 core machine. However, you can change number of receivers, batch interval, block interval, window duration, slide interval, checkpoint directory
+The current configuration runs perfectly on a single 4 core machine. However, you can change the batch interval, block interval, window duration, slide interval, checkpoint directory
 and many more configuration as per you machine/cluster setup.
 
 ### Prerequisites
@@ -34,5 +34,14 @@ This command is for deploying on local machine, if you want to deploy it to a bi
 `topN=50 country=us state=TX city=Austin` are optional, provide if you want any geographical filtering on the trending topics. In case arguments are not provided
 default values will be used, i.e. the data will not be filtered.
 ```
-spark-submit --master local[*] --class com.humblefreak.analysis.RealTimeProcessing <project_dir>/target/scala-2.11/ing_case_analysis-assembly-0.1.jar topN=50 country=us state=TX city=Austin
+spark-submit --master local[*] --class com.humblefreak.analysis.RealTimeProcessing {project_dir}/target/scala-2.11/ing_case_analysis-assembly-0.1.jar topN=50 country=us state=TX city=Austin
 ```
+
+## Built With
+```Scala```
+```Apache Spark```
+```Sbt```
+```ScalaTest```
+```spark-testing-base```
+```async-http-client```
+```play-json```
