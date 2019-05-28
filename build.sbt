@@ -1,4 +1,4 @@
-name := "ing_case_analysis"
+name := "meetup_api_trending_topics"
 
 version := "0.1"
 
